@@ -13,7 +13,7 @@ Python 3.11+ e pytest.
 ## Escopo da primeira versão
 
 - [ ] Cadastrar metadados de contratos
-- [ ] Consultar próximos vencimentos
+- [x] Consultar próximos vencimentos
 - [ ] Registrar renovações
 
 ## Critérios para concluir a primeira versão
