@@ -4,11 +4,11 @@ Organização de contratos com destaque para vencimentos e renovações.
 
 ## Estado atual
 
-Projeto em planejamento. Este repositório contém a definição do projeto; ainda não há aplicação executável, interface ou testes implementados.
+MVP executável em branch de desenvolvimento, com testes automatizados. Consulta em memória de vencimentos dentro de uma janela configurável. Ainda não há notificações ou persistência.
 
-## Tecnologias propostas
+## Tecnologias implementadas
 
-Python, FastAPI, React e PostgreSQL. A escolha será confirmada ao iniciar a implementação.
+Python 3.11+ e pytest.
 
 ## Escopo da primeira versão
 
@@ -25,7 +25,14 @@ Python, FastAPI, React e PostgreSQL. A escolha será confirmada ao iniciar a imp
 
 ## Desenvolvimento
 
-As funcionalidades acima são planejadas. Os comandos de instalação e a estrutura do código serão documentados junto da primeira implementação. Não há integrações externas ou serviços ativos nesta etapa.
+Execute na raiz do repositório:
+
+```bash
+python -m pip install pytest
+pytest -q
+```
+
+O GitHub Actions executa a validação em pushes e pull requests. Este é um núcleo demonstrativo; as funcionalidades ainda marcadas como pendentes na lista acima continuam planejadas.
 
 ## Privacidade e configuração
 
