@@ -1,2 +1,2 @@
-from .core import Contrato, proximos_vencimentos
-__all__ = ["Contrato", "proximos_vencimentos"]
+from .core import Contrato, Renovacao, proximos_vencimentos, renovar_contrato
+__all__ = ["Contrato", "Renovacao", "proximos_vencimentos", "renovar_contrato"]
