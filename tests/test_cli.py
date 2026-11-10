@@ -66,3 +66,14 @@ def test_cli_help_on_no_subcommand(tmp_path):
     help_result = run_cli(tmp_path / "db.json")
     assert help_result.returncode == 0
     assert "usage:" in help_result.stdout
+
+
+def test_cli_rejects_invalid_utf8_without_traceback_or_file_changes(tmp_path):
+    path = tmp_path / "contracts.json"
+    original = b'{"version":1,"contracts":["\xff"]}'
+    path.write_bytes(original)
+    result = run_cli(path, "list")
+    assert result.returncode == 2
+    assert "JSON" in result.stderr
+    assert "Traceback" not in result.stderr
+    assert path.read_bytes() == original
