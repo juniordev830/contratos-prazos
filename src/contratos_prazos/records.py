@@ -39,7 +39,7 @@ class ContractRecord:
                 raise ValueError(f"{name} inválido")
             if any(ord(char) < 32 for char in text):
                 raise ValueError(f"{name} contém caracteres de controle")
-        if not isinstance(self.started_on, date) or not isinstance(self.expires_on, date):
+        if type(self.started_on) is not date or type(self.expires_on) is not date:
             raise ValueError("datas precisam ser instâncias date")
         if self.expires_on < self.started_on:
             raise ValueError("vencimento anterior ao início")
@@ -131,7 +131,7 @@ def renew_contract(
 
 
 def contract_status(item: ContractRecord, today: date, days: int = 30) -> str:
-    if not isinstance(today, date):
+    if type(today) is not date:
         raise ValueError("data de referência inválida")
     if type(days) is not int or not 0 <= days <= 3650:
         raise ValueError("janela de alerta fora do limite")
@@ -148,7 +148,7 @@ def search_contracts(
     if not isinstance(query, str) or len(query) > 120:
         raise ValueError("busca inválida")
     # Validar antes de filtrar: uma lista vazia não pode mascarar entradas ruins.
-    if not isinstance(today, date):
+    if type(today) is not date:
         raise ValueError("data de referência inválida")
     if type(days) is not int or not 0 <= days <= 3650:
         raise ValueError("janela de alerta fora do limite")

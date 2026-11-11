@@ -1,5 +1,5 @@
 from dataclasses import replace
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 
 import pytest
 
@@ -144,3 +144,27 @@ def test_search_validates_reference_date_and_window_even_without_records():
     with pytest.raises(ValueError, match="janela de alerta"):
         search_contracts([], TODAY, days=True)
     assert search_contracts([], TODAY, days=0) == []
+
+
+def test_contract_dates_reject_datetime_subclasses():
+    # datetime is a subclass of date but includes a time component.
+    # Only date-only values are serializable in the contract schema.
+    for changes in (
+        {"started_on": datetime(2026, 1, 1, 12)},
+        {"expires_on": datetime(2026, 11, 17, 18)},
+    ):
+        with pytest.raises(ValueError, match="datas precisam"):
+            make_contract(**changes)
+
+
+def test_reference_dates_reject_datetime_even_with_empty_registry():
+    item = make_contract()
+    invalid = datetime(2026, 11, 7, 12)
+    with pytest.raises(ValueError, match="data de referência"):
+        contract_status(item, invalid)
+    with pytest.raises(ValueError, match="data de referência"):
+        search_contracts([], invalid)
+    with pytest.raises(ValueError, match="data de referência"):
+        registry_summary([], invalid)
+    assert contract_status(item, TODAY) == "due"
+    assert search_contracts([item], TODAY, status="due") == [item]
