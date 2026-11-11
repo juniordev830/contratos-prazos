@@ -35,6 +35,8 @@ def parser() -> argparse.ArgumentParser:
     listing.add_argument("--status", choices=("all", "expired", "due", "active"), default="all")
     listing.add_argument("--days", type=int, default=30)
     listing.add_argument("--query", default="")
+    listing.add_argument("--as-of", default=None, metavar="AAAA-MM-DD",
+                         help="data de referência reproduzível para a consulta")
 
     renew = actions.add_parser("renew", help="registrar renovação")
     renew.add_argument("id")
@@ -43,7 +45,9 @@ def parser() -> argparse.ArgumentParser:
     remove = actions.add_parser("remove", help="excluir um contrato")
     remove.add_argument("id")
 
-    actions.add_parser("summary", help="relatório consolidado")
+    summary = actions.add_parser("summary", help="relatório consolidado")
+    summary.add_argument("--as-of", default=None, metavar="AAAA-MM-DD",
+                         help="data de referência reproduzível para o relatório")
     return root
 
 
@@ -54,7 +58,9 @@ def main(argv: list[str] | None = None) -> int:
         root.print_help()
         return 0
     try:
-        today = date.today()
+        today = (parse_date(args.as_of)
+                 if args.command in ("list", "summary") and args.as_of is not None
+                 else date.today())
         entries = load_contracts(args.data)
         if args.command == "add":
             item = ContractRecord(
