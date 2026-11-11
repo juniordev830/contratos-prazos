@@ -11,6 +11,7 @@ from .records import (
     renew_contract, search_contracts, contract_status, registry_summary,
 )
 from .storage import load_contracts, save_contracts
+from .exporting import export_contracts
 
 
 def parser() -> argparse.ArgumentParser:
@@ -38,6 +39,13 @@ def parser() -> argparse.ArgumentParser:
     listing.add_argument("--as-of", default=None, metavar="AAAA-MM-DD",
                          help="data de referência reproduzível para a consulta")
 
+    export = actions.add_parser("export", help="exportar consulta sem modificar o registro")
+    export.add_argument("--format", choices=("json", "csv"), default="json")
+    export.add_argument("--status", choices=("all", "expired", "due", "active"), default="all")
+    export.add_argument("--days", type=int, default=30)
+    export.add_argument("--query", default="")
+    export.add_argument("--as-of", default=None, metavar="AAAA-MM-DD")
+
     renew = actions.add_parser("renew", help="registrar renovação")
     renew.add_argument("id")
     renew.add_argument("--days", type=int, default=None)
@@ -59,7 +67,7 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     try:
         today = (parse_date(args.as_of)
-                 if args.command in ("list", "summary") and args.as_of is not None
+                 if args.command in ("list", "summary", "export") and args.as_of is not None
                  else date.today())
         entries = load_contracts(args.data)
         if args.command == "add":
@@ -96,6 +104,9 @@ def main(argv: list[str] | None = None) -> int:
                     f"vencimento={item.expires_on} | status={status} | "
                     f"R$ {item.amount_cents // 100},{item.amount_cents % 100:02d}"
                 )
+        elif args.command == "export":
+            print(export_contracts(entries, today, format=args.format,
+                  status=args.status, query=args.query, days=args.days), end="")
         elif args.command == "summary":
             total = registry_summary(entries, today)
             print(f"Contratos: {total['total']}")

@@ -79,3 +79,14 @@ As operações de cadastro e renovação retornam novas listas, sem modificar as
 ## Licença
 
 Ainda não definida.
+
+## Exportar consultas
+
+`export` usa os mesmos filtros de `list`, preserva o JSON original e escreve somente o relatório na saída padrão:
+
+```bash
+python -m contratos_prazos.cli export --format json --as-of 2026-11-11
+python -m contratos_prazos.cli export --format csv --status due --days 90 --query suporte --as-of 2026-11-11 > consulta.csv
+```
+
+O JSON informa a data de referência, janela de alerta e situação de cada contrato. O CSV usa ponto e vírgula, valores inteiros em centavos e cabeçalho mesmo quando não há resultados. Textos que poderiam ser interpretados como fórmulas recebem apóstrofo no CSV; os valores armazenados e a exportação JSON permanecem originais.
