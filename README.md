@@ -31,12 +31,13 @@ python -m contratos_prazos.cli add DEMO-001 "Contrato de suporte" "Empresa Fict�
 python -m contratos_prazos.cli list
 python -m contratos_prazos.cli list --status due --days 90
 python -m contratos_prazos.cli list --query suporte
-python -m contratos_prazos.cli summary
+python -m contratos_prazos.cli list --status due --as-of 2026-11-11
+python -m contratos_prazos.cli summary --as-of 2026-11-11
 python -m contratos_prazos.cli renew DEMO-001
 python -m contratos_prazos.cli remove DEMO-001
 ```
 
-O valor `120000` significa **R$ 1.200,00** em centavos. Datas usam `AAAA-MM-DD`. Renovar adiciona o prazo informado ao vencimento anterior, independentemente da data de execução.
+O valor `120000` significa **R$ 1.200,00** em centavos. Datas usam `AAAA-MM-DD`. Os comandos `list` e `summary` aceitam `--as-of AAAA-MM-DD` para reproduzir a situação em uma data de referência, sem depender do relógio do computador. Sem `--as-of`, utilizam a data local do sistema. O intervalo de alerta `--days` deve estar entre 0 e 3650 mesmo quando não há contratos. Renovar adiciona o prazo informado ao vencimento anterior, independentemente da data de execução.
 
 ## Onde o registro fica
 
