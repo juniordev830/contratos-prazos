@@ -49,6 +49,8 @@ def parser() -> argparse.ArgumentParser:
     renew = actions.add_parser("renew", help="registrar renovação")
     renew.add_argument("id")
     renew.add_argument("--days", type=int, default=None)
+    renew.add_argument("--dry-run", action="store_true",
+                       help="simular renovação sem alterar o arquivo JSON")
 
     remove = actions.add_parser("remove", help="excluir um contrato")
     remove.add_argument("id")
@@ -85,9 +87,18 @@ def main(argv: list[str] | None = None) -> int:
             print(f"Contrato cadastrado: {item.id} (total: {count})")
         elif args.command == "renew":
             updated = renew_contract(entries, args.id, args.days)
-            save_contracts(updated, args.data)
             item = next(item for item in updated if item.id == args.id)
-            print(f"Renovação registrada: {item.id}; novo vencimento {item.expires_on}")
+            if args.dry_run:
+                original = next(item for item in entries if item.id == args.id)
+                print(
+                    f"Simulação sem gravação: {item.id}; "
+                    f"vencimento atual {original.expires_on}; "
+                    f"novo vencimento {item.expires_on}; "
+                    f"renovações: {original.renewal_count} -> {item.renewal_count}"
+                )
+            else:
+                save_contracts(updated, args.data)
+                print(f"Renovação registrada: {item.id}; novo vencimento {item.expires_on}")
         elif args.command == "remove":
             save_contracts(remove_contract(entries, args.id), args.data)
             print(f"Contrato excluído: {args.id}")
