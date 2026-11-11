@@ -147,6 +147,11 @@ def search_contracts(
         raise ValueError("status inválido")
     if not isinstance(query, str) or len(query) > 120:
         raise ValueError("busca inválida")
+    # Validar antes de filtrar: uma lista vazia não pode mascarar entradas ruins.
+    if not isinstance(today, date):
+        raise ValueError("data de referência inválida")
+    if type(days) is not int or not 0 <= days <= 3650:
+        raise ValueError("janela de alerta fora do limite")
     words = query.casefold().strip()
     return sorted(
         (
