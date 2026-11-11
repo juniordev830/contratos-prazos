@@ -134,3 +134,13 @@ def test_registry_summary_counts_and_nearest_date():
     assert report["renewals"] == 2
     assert report["next_expiration"] == (TODAY + timedelta(days=2)).isoformat()
     assert registry_summary([], TODAY)["next_expiration"] is None
+
+
+def test_search_validates_reference_date_and_window_even_without_records():
+    with pytest.raises(ValueError, match="data de referência"):
+        search_contracts([], "2026-11-11")
+    with pytest.raises(ValueError, match="janela de alerta"):
+        search_contracts([], TODAY, days=-1)
+    with pytest.raises(ValueError, match="janela de alerta"):
+        search_contracts([], TODAY, days=True)
+    assert search_contracts([], TODAY, days=0) == []
