@@ -78,3 +78,7 @@ As operações de cadastro e renovação retornam novas listas, sem modificar as
 ## Licença
 
 Ainda não definida.
+
+## Documentação para manutenção
+
+O [guia de validação](docs/GUIA_DE_VALIDACAO.md) contém testes de regressão, pontos críticos e critérios para revisar a próxima alteração.
