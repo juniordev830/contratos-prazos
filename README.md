@@ -6,7 +6,7 @@ Gerenciador local em **Python 3.10+**, com cadastro, renovação e alertas de ve
 
 - Cadastro e exclusão de contratos com identificação única.
 - Validação de datas reais, valores em centavos, nomes e prazos.
-- Registro de renovações, acrescentando dias ao vencimento anterior.
+- Registro de renovações, acrescentando dias ao vencimento anterior, com simulação prévia sem gravação.
 - Consulta de contratos vencidos, prestes a vencer e ativos.
 - Pesquisa por nome, contraparte ou identificador.
 - Resumo com totais, valores, renovações e próximo vencimento.
@@ -31,12 +31,14 @@ python -m contratos_prazos.cli add DEMO-001 "Contrato de suporte" "Empresa Fict�
 python -m contratos_prazos.cli list
 python -m contratos_prazos.cli list --status due --days 90
 python -m contratos_prazos.cli list --query suporte
-python -m contratos_prazos.cli summary
+python -m contratos_prazos.cli list --status due --as-of 2026-11-11
+python -m contratos_prazos.cli summary --as-of 2026-11-11
+python -m contratos_prazos.cli renew DEMO-001 --dry-run
 python -m contratos_prazos.cli renew DEMO-001
 python -m contratos_prazos.cli remove DEMO-001
 ```
 
-O valor `120000` significa **R$ 1.200,00** em centavos. Datas usam `AAAA-MM-DD`. Renovar adiciona o prazo informado ao vencimento anterior, independentemente da data de execução.
+O valor `120000` significa **R$ 1.200,00** em centavos. Datas usam `AAAA-MM-DD`. Os comandos `list` e `summary` aceitam `--as-of AAAA-MM-DD` para reproduzir a situação em uma data de referência, sem depender do relógio do computador. Sem `--as-of`, utilizam a data local do sistema. O intervalo de alerta `--days` deve estar entre 0 e 3650 mesmo quando não há contratos. Renovar adiciona o prazo informado ao vencimento anterior, independentemente da data de execução. Use `renew ID --dry-run` para conferir a data futura e a contagem de renovações **sem modificar o arquivo**. O cálculo respeita `--days N` quando informado; sem esse parâmetro, utiliza o prazo cadastrado. Confirme a mudança executando `renew ID` sem `--dry-run`. Um contrato inexistente ou prazo inválido gera erro sem gravação.
 
 ## Onde o registro fica
 
@@ -78,3 +80,14 @@ As operações de cadastro e renovação retornam novas listas, sem modificar as
 ## Licença
 
 Ainda não definida.
+
+## Exportar consultas
+
+`export` usa os mesmos filtros de `list`, preserva o JSON original e escreve somente o relatório na saída padrão:
+
+```bash
+python -m contratos_prazos.cli export --format json --as-of 2026-11-11
+python -m contratos_prazos.cli export --format csv --status due --days 90 --query suporte --as-of 2026-11-11 > consulta.csv
+```
+
+O JSON informa a data de referência, janela de alerta e situação de cada contrato. O CSV usa ponto e vírgula, valores inteiros em centavos e cabeçalho mesmo quando não há resultados. Textos que poderiam ser interpretados como fórmulas recebem apóstrofo no CSV; os valores armazenados e a exportação JSON permanecem originais.

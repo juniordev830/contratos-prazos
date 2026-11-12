@@ -77,3 +77,28 @@ def test_cli_rejects_invalid_utf8_without_traceback_or_file_changes(tmp_path):
     assert "JSON" in result.stderr
     assert "Traceback" not in result.stderr
     assert path.read_bytes() == original
+
+
+def test_cli_explicit_reference_date_reproduces_expiration_status(tmp_path):
+    path = tmp_path / "contracts.json"
+    add = run_cli(path, "add", "demo1", "Contrato de teste", "Empresa X",
+                  "2026-01-01", "2026-11-20", "5000")
+    assert add.returncode == 0, add.stderr
+
+    due = run_cli(path, "list", "--status", "due", "--as-of", "2026-11-11")
+    assert due.returncode == 0, due.stderr
+    assert "demo1" in due.stdout and "status=due" in due.stdout
+
+    active = run_cli(path, "list", "--status", "active", "--as-of", "2026-10-01")
+    assert active.returncode == 0, active.stderr
+    assert "status=active" in active.stdout
+
+    summary = run_cli(path, "summary", "--as-of", "2026-11-21")
+    assert summary.returncode == 0, summary.stderr
+    assert "Vencidos: 1" in summary.stdout
+    assert "A vencer: 0" in summary.stdout
+
+    malformed = run_cli(path, "list", "--as-of", "2026-02-30")
+    assert malformed.returncode == 2
+    assert "data" in malformed.stderr
+    assert "Traceback" not in malformed.stderr

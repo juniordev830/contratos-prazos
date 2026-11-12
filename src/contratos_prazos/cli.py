@@ -11,6 +11,7 @@ from .records import (
     renew_contract, search_contracts, contract_status, registry_summary,
 )
 from .storage import load_contracts, save_contracts
+from .exporting import export_contracts
 
 
 def parser() -> argparse.ArgumentParser:
@@ -35,15 +36,28 @@ def parser() -> argparse.ArgumentParser:
     listing.add_argument("--status", choices=("all", "expired", "due", "active"), default="all")
     listing.add_argument("--days", type=int, default=30)
     listing.add_argument("--query", default="")
+    listing.add_argument("--as-of", default=None, metavar="AAAA-MM-DD",
+                         help="data de referência reproduzível para a consulta")
+
+    export = actions.add_parser("export", help="exportar consulta sem modificar o registro")
+    export.add_argument("--format", choices=("json", "csv"), default="json")
+    export.add_argument("--status", choices=("all", "expired", "due", "active"), default="all")
+    export.add_argument("--days", type=int, default=30)
+    export.add_argument("--query", default="")
+    export.add_argument("--as-of", default=None, metavar="AAAA-MM-DD")
 
     renew = actions.add_parser("renew", help="registrar renovação")
     renew.add_argument("id")
     renew.add_argument("--days", type=int, default=None)
+    renew.add_argument("--dry-run", action="store_true",
+                       help="simular renovação sem alterar o arquivo JSON")
 
     remove = actions.add_parser("remove", help="excluir um contrato")
     remove.add_argument("id")
 
-    actions.add_parser("summary", help="relatório consolidado")
+    summary = actions.add_parser("summary", help="relatório consolidado")
+    summary.add_argument("--as-of", default=None, metavar="AAAA-MM-DD",
+                         help="data de referência reproduzível para o relatório")
     return root
 
 
@@ -54,7 +68,9 @@ def main(argv: list[str] | None = None) -> int:
         root.print_help()
         return 0
     try:
-        today = date.today()
+        today = (parse_date(args.as_of)
+                 if args.command in ("list", "summary", "export") and args.as_of is not None
+                 else date.today())
         entries = load_contracts(args.data)
         if args.command == "add":
             item = ContractRecord(
@@ -71,9 +87,18 @@ def main(argv: list[str] | None = None) -> int:
             print(f"Contrato cadastrado: {item.id} (total: {count})")
         elif args.command == "renew":
             updated = renew_contract(entries, args.id, args.days)
-            save_contracts(updated, args.data)
             item = next(item for item in updated if item.id == args.id)
-            print(f"Renovação registrada: {item.id}; novo vencimento {item.expires_on}")
+            if args.dry_run:
+                original = next(item for item in entries if item.id == args.id)
+                print(
+                    f"Simulação sem gravação: {item.id}; "
+                    f"vencimento atual {original.expires_on}; "
+                    f"novo vencimento {item.expires_on}; "
+                    f"renovações: {original.renewal_count} -> {item.renewal_count}"
+                )
+            else:
+                save_contracts(updated, args.data)
+                print(f"Renovação registrada: {item.id}; novo vencimento {item.expires_on}")
         elif args.command == "remove":
             save_contracts(remove_contract(entries, args.id), args.data)
             print(f"Contrato excluído: {args.id}")
@@ -90,6 +115,9 @@ def main(argv: list[str] | None = None) -> int:
                     f"vencimento={item.expires_on} | status={status} | "
                     f"R$ {item.amount_cents // 100},{item.amount_cents % 100:02d}"
                 )
+        elif args.command == "export":
+            print(export_contracts(entries, today, format=args.format,
+                  status=args.status, query=args.query, days=args.days), end="")
         elif args.command == "summary":
             total = registry_summary(entries, today)
             print(f"Contratos: {total['total']}")
