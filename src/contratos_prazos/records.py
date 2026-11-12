@@ -77,6 +77,10 @@ class ContractRecord:
         }
         if set(payload) - expected:
             raise ValueError("campos desconhecidos no contrato")
+        required = {"id", "title", "counterparty", "started_on", "expires_on"}
+        missing = required - set(payload)
+        if missing:
+            raise ValueError("campos obrigatórios ausentes: " + ", ".join(sorted(missing)))
         values = dict(payload)
         values["started_on"] = parse_date(values["started_on"])
         values["expires_on"] = parse_date(values["expires_on"])
