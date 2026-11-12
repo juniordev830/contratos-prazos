@@ -168,3 +168,16 @@ def test_reference_dates_reject_datetime_even_with_empty_registry():
         registry_summary([], invalid)
     assert contract_status(item, TODAY) == "due"
     assert search_contracts([item], TODAY, status="due") == [item]
+
+
+def test_deserialization_reports_missing_required_fields():
+    payload = make_contract().to_dict()
+    for missing_field in ("id", "title", "counterparty", "started_on", "expires_on"):
+        incomplete = {key: value for key, value in payload.items() if key != missing_field}
+        with pytest.raises(ValueError, match="campos obrigatórios ausentes"):
+            ContractRecord.from_dict(incomplete)
+
+
+def test_deserialization_rejects_missing_dates_without_keyerror():
+    with pytest.raises(ValueError, match="started_on, title"):
+        ContractRecord.from_dict({"id": "demo", "counterparty": "Empresa", "expires_on": "2026-12-31"})
