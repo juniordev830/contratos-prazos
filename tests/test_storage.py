@@ -4,7 +4,7 @@ from datetime import date
 import pytest
 
 from contratos_prazos.records import ContractRecord
-from contratos_prazos.storage import load_contracts, save_contracts
+from contratos_prazos.storage import MAX_BYTES, load_contracts, save_contracts
 
 
 def example():
@@ -61,4 +61,18 @@ def test_rejects_invalid_contract_in_json(tmp_path):
     document = {"version": 1, "contracts": [{**example().to_dict(), "amount_cents": -1}]}
     file.write_text(json.dumps(document), encoding="utf-8")
     with pytest.raises(ValueError):
+        load_contracts(file)
+
+
+def test_rejects_boolean_schema_version(tmp_path):
+    file = tmp_path / "contracts.json"
+    file.write_text('{"version":true,"contracts":[]}', encoding="utf-8")
+    with pytest.raises(ValueError, match="estrutura de armazenamento"):
+        load_contracts(file)
+
+
+def test_rejects_oversized_json_without_parsing(tmp_path):
+    file = tmp_path / "large.json"
+    file.write_bytes(b" " * (MAX_BYTES + 1))
+    with pytest.raises(ValueError, match="muito grande"):
         load_contracts(file)
