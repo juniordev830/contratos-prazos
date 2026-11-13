@@ -23,14 +23,20 @@ def load_contracts(path: Path | None = None) -> list[ContractRecord]:
     try:
         if target.stat().st_size > MAX_BYTES:
             raise ValueError("arquivo de contratos muito grande")
-        payload = json.loads(target.read_text(encoding="utf-8"))
+        # Bound the actual read as well as the stat check (file may grow between them).
+        with target.open("rb") as stream:
+            raw = stream.read(MAX_BYTES + 1)
+        if len(raw) > MAX_BYTES:
+            raise ValueError("arquivo de contratos muito grande")
+        payload = json.loads(raw.decode("utf-8"))
     except FileNotFoundError:
         return []
     except (json.JSONDecodeError, UnicodeDecodeError) as error:
         raise ValueError("arquivo JSON inválido; use codificação UTF-8") from error
     if (
         not isinstance(payload, dict)
-        or payload.get("version") != SCHEMA
+        or type(payload.get("version")) is not int
+        or payload["version"] != SCHEMA
         or not isinstance(payload.get("contracts"), list)
     ):
         raise ValueError("estrutura de armazenamento inválida")
