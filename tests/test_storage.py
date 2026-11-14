@@ -76,3 +76,15 @@ def test_rejects_oversized_json_without_parsing(tmp_path):
     file.write_bytes(b" " * (MAX_BYTES + 1))
     with pytest.raises(ValueError, match="muito grande"):
         load_contracts(file)
+
+
+@pytest.mark.parametrize("raw", [
+    '{"version":1,"version":2,"contracts":[]}',
+    '{"version":1,"contracts":[],"contracts":[]}',
+    '{"version":1,"contracts":[{"id":"a","id":"b"}]}',
+])
+def test_rejects_duplicate_json_keys_at_any_depth(tmp_path, raw):
+    file = tmp_path / "duplicates.json"
+    file.write_text(raw, encoding="utf-8")
+    with pytest.raises(ValueError, match="chave JSON duplicada"):
+        load_contracts(file)
