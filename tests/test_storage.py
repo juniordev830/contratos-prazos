@@ -108,3 +108,22 @@ def test_deeply_nested_json_returns_validation_error(tmp_path):
     file.write_text("[" * depth + "0" + "]" * depth, encoding="utf-8")
     with pytest.raises(ValueError, match="arquivo JSON inválido"):
         load_contracts(file)
+
+
+def test_failed_atomic_replace_preserves_previous_contracts(tmp_path, monkeypatch):
+    """A failed final rename must not destroy the last valid catalog."""
+    from contratos_prazos import storage
+
+    file = tmp_path / "contracts.json"
+    save_contracts([example()], file)
+    original = file.read_bytes()
+
+    def fail_replace(source, destination):
+        raise OSError("simulated rename failure")
+
+    monkeypatch.setattr(storage.os, "replace", fail_replace)
+    with pytest.raises(OSError, match="simulated rename failure"):
+        save_contracts([], file)
+
+    assert file.read_bytes() == original
+    assert list(tmp_path.glob(".contratos-*.tmp")) == []
