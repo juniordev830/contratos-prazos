@@ -88,3 +88,14 @@ def test_rejects_duplicate_json_keys_at_any_depth(tmp_path, raw):
     file.write_text(raw, encoding="utf-8")
     with pytest.raises(ValueError, match="chave JSON duplicada"):
         load_contracts(file)
+
+
+@pytest.mark.parametrize("token", ["NaN", "Infinity", "-Infinity"])
+def test_rejects_nonstandard_json_numbers_even_in_extra_fields(tmp_path, token):
+    file = tmp_path / "nonfinite.json"
+    file.write_text(
+        '{"version":1,"contracts":[],"extra":' + token + '}',
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="não finito"):
+        load_contracts(file)
