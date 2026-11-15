@@ -50,7 +50,7 @@ def load_contracts(path: Path | None = None) -> list[ContractRecord]:
         )
     except FileNotFoundError:
         return []
-    except (json.JSONDecodeError, UnicodeDecodeError) as error:
+    except (json.JSONDecodeError, UnicodeDecodeError, RecursionError) as error:
         raise ValueError("arquivo JSON inválido; use codificação UTF-8") from error
     if (
         not isinstance(payload, dict)
