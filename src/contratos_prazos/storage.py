@@ -28,6 +28,11 @@ def _reject_duplicate_keys(pairs: list[tuple[str, object]]) -> dict[str, object]
     return result
 
 
+def _reject_nonfinite_number(value: str) -> None:
+    """Reject non-standard JSON tokens NaN, Infinity and -Infinity."""
+    raise ValueError(f"número JSON não finito: {value}")
+
+
 def load_contracts(path: Path | None = None) -> list[ContractRecord]:
     target = path if path is not None else default_path()
     try:
@@ -38,7 +43,11 @@ def load_contracts(path: Path | None = None) -> list[ContractRecord]:
             raw = stream.read(MAX_BYTES + 1)
         if len(raw) > MAX_BYTES:
             raise ValueError("arquivo de contratos muito grande")
-        payload = json.loads(raw.decode("utf-8"), object_pairs_hook=_reject_duplicate_keys)
+        payload = json.loads(
+            raw.decode("utf-8"),
+            object_pairs_hook=_reject_duplicate_keys,
+            parse_constant=_reject_nonfinite_number,
+        )
     except FileNotFoundError:
         return []
     except (json.JSONDecodeError, UnicodeDecodeError) as error:
