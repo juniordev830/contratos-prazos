@@ -99,3 +99,12 @@ def test_rejects_nonstandard_json_numbers_even_in_extra_fields(tmp_path, token):
     )
     with pytest.raises(ValueError, match="não finito"):
         load_contracts(file)
+
+
+def test_deeply_nested_json_returns_validation_error(tmp_path):
+    # Within the byte limit, but beyond Python's JSON decoder recursion limit.
+    file = tmp_path / "deep.json"
+    depth = 10_000
+    file.write_text("[" * depth + "0" + "]" * depth, encoding="utf-8")
+    with pytest.raises(ValueError, match="arquivo JSON inválido"):
+        load_contracts(file)
