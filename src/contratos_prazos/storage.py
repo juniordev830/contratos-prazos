@@ -18,19 +18,44 @@ def default_path() -> Path:
     ).expanduser()
 
 
+def _reject_duplicate_keys(pairs: list[tuple[str, object]]) -> dict[str, object]:
+    """Reject ambiguous JSON objects instead of silently keeping the last value."""
+    result: dict[str, object] = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError(f"chave JSON duplicada: {key}")
+        result[key] = value
+    return result
+
+
+def _reject_nonfinite_number(value: str) -> None:
+    """Reject non-standard JSON tokens NaN, Infinity and -Infinity."""
+    raise ValueError(f"número JSON não finito: {value}")
+
+
 def load_contracts(path: Path | None = None) -> list[ContractRecord]:
     target = path if path is not None else default_path()
     try:
         if target.stat().st_size > MAX_BYTES:
             raise ValueError("arquivo de contratos muito grande")
-        payload = json.loads(target.read_text(encoding="utf-8"))
+        # Bound the actual read as well as the stat check (file may grow between them).
+        with target.open("rb") as stream:
+            raw = stream.read(MAX_BYTES + 1)
+        if len(raw) > MAX_BYTES:
+            raise ValueError("arquivo de contratos muito grande")
+        payload = json.loads(
+            raw.decode("utf-8"),
+            object_pairs_hook=_reject_duplicate_keys,
+            parse_constant=_reject_nonfinite_number,
+        )
     except FileNotFoundError:
         return []
-    except (json.JSONDecodeError, UnicodeDecodeError) as error:
+    except (json.JSONDecodeError, UnicodeDecodeError, RecursionError) as error:
         raise ValueError("arquivo JSON inválido; use codificação UTF-8") from error
     if (
         not isinstance(payload, dict)
-        or payload.get("version") != SCHEMA
+        or type(payload.get("version")) is not int
+        or payload["version"] != SCHEMA
         or not isinstance(payload.get("contracts"), list)
     ):
         raise ValueError("estrutura de armazenamento inválida")
