@@ -1,5 +1,5 @@
 from dataclasses import replace
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 
 import pytest
 
@@ -134,3 +134,50 @@ def test_registry_summary_counts_and_nearest_date():
     assert report["renewals"] == 2
     assert report["next_expiration"] == (TODAY + timedelta(days=2)).isoformat()
     assert registry_summary([], TODAY)["next_expiration"] is None
+
+
+def test_search_validates_reference_date_and_window_even_without_records():
+    with pytest.raises(ValueError, match="data de referência"):
+        search_contracts([], "2026-11-11")
+    with pytest.raises(ValueError, match="janela de alerta"):
+        search_contracts([], TODAY, days=-1)
+    with pytest.raises(ValueError, match="janela de alerta"):
+        search_contracts([], TODAY, days=True)
+    assert search_contracts([], TODAY, days=0) == []
+
+
+def test_contract_dates_reject_datetime_subclasses():
+    # datetime is a subclass of date but includes a time component.
+    # Only date-only values are serializable in the contract schema.
+    for changes in (
+        {"started_on": datetime(2026, 1, 1, 12)},
+        {"expires_on": datetime(2026, 11, 17, 18)},
+    ):
+        with pytest.raises(ValueError, match="datas precisam"):
+            make_contract(**changes)
+
+
+def test_reference_dates_reject_datetime_even_with_empty_registry():
+    item = make_contract()
+    invalid = datetime(2026, 11, 7, 12)
+    with pytest.raises(ValueError, match="data de referência"):
+        contract_status(item, invalid)
+    with pytest.raises(ValueError, match="data de referência"):
+        search_contracts([], invalid)
+    with pytest.raises(ValueError, match="data de referência"):
+        registry_summary([], invalid)
+    assert contract_status(item, TODAY) == "due"
+    assert search_contracts([item], TODAY, status="due") == [item]
+
+
+def test_deserialization_reports_missing_required_fields():
+    payload = make_contract().to_dict()
+    for missing_field in ("id", "title", "counterparty", "started_on", "expires_on"):
+        incomplete = {key: value for key, value in payload.items() if key != missing_field}
+        with pytest.raises(ValueError, match="campos obrigatórios ausentes"):
+            ContractRecord.from_dict(incomplete)
+
+
+def test_deserialization_rejects_missing_dates_without_keyerror():
+    with pytest.raises(ValueError, match="started_on, title"):
+        ContractRecord.from_dict({"id": "demo", "counterparty": "Empresa", "expires_on": "2026-12-31"})
