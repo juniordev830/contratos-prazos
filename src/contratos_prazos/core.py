@@ -21,7 +21,9 @@ def proximos_vencimentos(contratos: list[Contrato], hoje: date, dias: int = 30) 
         raise ValueError("hoje deve ser uma data")
     if type(dias) is not int or not 0 <= dias <= 3650:
         raise ValueError("dias deve estar entre 0 e 3650")
-    if not isinstance(contratos, list) or any(not isinstance(item, Contrato) for item in contratos):
-        raise ValueError("contratos deve ser uma lista de contratos")
+    if not isinstance(contratos, list) or len(contratos) > 3000:
+        raise ValueError("contratos deve ser uma lista com até 3000 contratos")
+    if any(not isinstance(item, Contrato) for item in contratos):
+        raise ValueError("contratos deve conter somente objetos Contrato")
     proximos = (contrato for contrato in contratos if 0 <= (contrato.vencimento - hoje).days <= dias)
     return sorted(proximos, key=lambda contrato: (contrato.vencimento, contrato.nome.casefold()))
