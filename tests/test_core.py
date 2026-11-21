@@ -19,7 +19,7 @@ def test_upcoming_window_includes_last_calendar_day_without_overflow():
 
 def test_legacy_contract_validates_name_and_expiration_type():
     today = date(2026, 11, 21)
-    for name in (" ", "\\nInvalido", "N" * 161, None):
+    for name in (" ", chr(10) + "Invalido", "N" * 161, None):
         with pytest.raises(ValueError):
             Contrato(name, today)
     with pytest.raises(ValueError):
