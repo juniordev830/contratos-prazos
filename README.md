@@ -95,3 +95,4 @@ O JSON informa a data de referência, janela de alerta e situação de cada cont
 ## Documentação para manutenção
 
 O [guia de validação](docs/GUIA_DE_VALIDACAO.md) contém testes de regressão, pontos críticos e critérios para revisar a próxima alteração.
+\nA API legada `Contrato(nome, vencimento)` agora exige uma data `date` real e um nome válido de até 160 caracteres, removendo espaços nas extremidades. A consulta de próximos vencimentos rejeita janelas não inteiras e desempata prazos iguais pelo nome do contrato.\n
