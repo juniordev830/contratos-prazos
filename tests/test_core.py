@@ -16,3 +16,37 @@ def test_upcoming_window_includes_last_calendar_day_without_overflow():
     contracts = [Contrato("Amanhã", date.max), Contrato("Ontem", date(9999, 12, 29))]
     assert proximos_vencimentos(contracts, today, 30) == [contracts[0]]
     assert proximos_vencimentos(contracts, today, 0) == []
+
+def test_legacy_contract_validates_name_and_expiration_type():
+    today = date(2026, 11, 21)
+    for name in (" ", chr(10) + "Invalido", "N" * 161, None):
+        with pytest.raises(ValueError):
+            Contrato(name, today)
+    with pytest.raises(ValueError):
+        Contrato("Suporte", "2026-11-21")
+    assert Contrato(" Suporte ", today).nome == "Suporte"
+
+
+def test_legacy_deadline_rejects_boolean_or_bad_input_shapes():
+    today = date(2026, 11, 21)
+    for window in (True, 1.5, "30"):
+        with pytest.raises(ValueError):
+            proximos_vencimentos([], today, window)
+    with pytest.raises(ValueError):
+        proximos_vencimentos([], "2026-11-21")
+    with pytest.raises(ValueError):
+        proximos_vencimentos([None], today)
+
+
+def test_legacy_due_date_ties_have_stable_name_order():
+    today = date(2026, 11, 21)
+    entries = [Contrato("Zeta", today), Contrato("Alfa", today)]
+    assert [x.nome for x in proximos_vencimentos(entries, today)] == ["Alfa", "Zeta"]
+
+
+def test_legacy_upcoming_deadlines_reject_overlarge_registry():
+    today = date(2026, 11, 21)
+    example = Contrato("Exemplo", today)
+    with pytest.raises(ValueError, match="3000"):
+        proximos_vencimentos([example] * 3001, today)
+    assert len(proximos_vencimentos([example] * 3000, today)) == 3000
