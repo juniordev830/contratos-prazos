@@ -42,3 +42,11 @@ def test_legacy_due_date_ties_have_stable_name_order():
     today = date(2026, 11, 21)
     entries = [Contrato("Zeta", today), Contrato("Alfa", today)]
     assert [x.nome for x in proximos_vencimentos(entries, today)] == ["Alfa", "Zeta"]
+
+
+def test_legacy_upcoming_deadlines_reject_overlarge_registry():
+    today = date(2026, 11, 21)
+    example = Contrato("Exemplo", today)
+    with pytest.raises(ValueError, match="3000"):
+        proximos_vencimentos([example] * 3001, today)
+    assert len(proximos_vencimentos([example] * 3000, today)) == 3000
